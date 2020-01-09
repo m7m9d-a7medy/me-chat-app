@@ -1,9 +1,12 @@
 import React from 'react';
 import ChatListComponent from '../chatList/chatList';
+import ChatViewComponent from '../chatView/chatView';
+import { Button, withStyles } from '@material-ui/core';
+import styles from './styles';
 const firebase = require('firebase');
 
 class DashboardComponent extends React.Component {
-    constructor(props){
+    constructor(props) {
         super(props);
         this.state = {
             selectedChat: null,
@@ -21,14 +24,16 @@ class DashboardComponent extends React.Component {
     }
 
     selectChat = (chatIndex) => {
-        console.log(chatIndex);
+        this.setState({
+            selectedChat: chatIndex
+        });
     }
 
-    componentDidMount(){
+    componentDidMount() {
         firebase
             .auth()
             .onAuthStateChanged(async _user => {
-                if(!_user){
+                if (!_user) {
                     this.props.history.push('/login');
                 }
                 else {
@@ -40,7 +45,7 @@ class DashboardComponent extends React.Component {
                             const chats = result.docs.map(_document => {
                                 return _document.data();
                             });
-                            await this.setState({   
+                            await this.setState({
                                 email: _user.email,
                                 chats: chats
                             });
@@ -50,19 +55,39 @@ class DashboardComponent extends React.Component {
             })
     }
 
+    signOut = () => {
+        firebase.auth().signOut();
+    }
+
     render() {
+        const { classes } = this.props;
+
         return (
-            <ChatListComponent
-                history={this.props.history}
-                newChatFn={this.newChatBtnClicked}
-                selectChatFn={this.selectChat}
-                chats={this.state.chats}
-                userEmail={this.state.email}
-                selectedChatIndex={this.state.selectedChat}
-            >
-            </ChatListComponent>
+            <div>
+                <ChatListComponent
+                    history={this.props.history}
+                    newChatFn={this.newChatBtnClicked}
+                    selectChatFn={this.selectChat}
+                    chats={this.state.chats}
+                    userEmail={this.state.email}
+                    selectedChatIndex={this.state.selectedChat}
+                >
+                </ChatListComponent>
+                {
+                    this.state.newChatFormVisible ?
+                    null :
+                    <ChatViewComponent
+                        user={this.state.email}
+                        chat={this.state.chats[this.state.selectedChat]}></ChatViewComponent>
+                }
+                <Button 
+                    onClick={this.signOut}
+                    className={classes.signOutBtn}>
+                    Sign Out
+                </Button>
+            </div>
         )
     }
 }
 
-export default DashboardComponent;
+export default withStyles(styles)(DashboardComponent);
