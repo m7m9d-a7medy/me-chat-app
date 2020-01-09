@@ -1,6 +1,7 @@
 import React from 'react';
 import ChatListComponent from '../chatList/chatList';
 import ChatViewComponent from '../chatView/chatView';
+import ChatTextBoxComponent from '../chatTextBox/chatTextBox';
 import { Button, withStyles } from '@material-ui/core';
 import styles from './styles';
 const firebase = require('firebase');
@@ -49,7 +50,7 @@ class DashboardComponent extends React.Component {
                                 email: _user.email,
                                 chats: chats
                             });
-                            console.log(this.state);
+                            //console.log(this.state);
                         });
                 }
             })
@@ -59,6 +60,25 @@ class DashboardComponent extends React.Component {
         firebase.auth().signOut();
     }
 
+    buildDocKey = (friend) => {
+        return [this.state.email, friend].sort().join(':');
+    }
+
+    submitMessage = (message) => {
+        const docKey = this.buildDocKey(this.state.chats[this.state.selectedChat].users.filter(_user => this.state.email !== _user)[0]);
+        firebase
+            .firestore()
+            .collection('chats')
+            .doc(docKey)
+            .update({
+                messages: firebase.firestore.FieldValue.arrayUnion({
+                    sender: this.state.email,
+                    message: message,
+                    timestamp: Date.now()
+                }),
+                recieverHasRead: false
+            })
+    }
     render() {
         const { classes } = this.props;
 
@@ -79,6 +99,11 @@ class DashboardComponent extends React.Component {
                     <ChatViewComponent
                         user={this.state.email}
                         chat={this.state.chats[this.state.selectedChat]}></ChatViewComponent>
+                }
+                {
+                    this.state.selectedChat !== null && !this.state.newChatFormVisible ?
+                    <ChatTextBoxComponent submitMessageFn={this.submitMessage}></ChatTextBoxComponent> :
+                    null
                 }
                 <Button 
                     onClick={this.signOut}
