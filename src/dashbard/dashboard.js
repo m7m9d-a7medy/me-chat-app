@@ -24,10 +24,11 @@ class DashboardComponent extends React.Component {
         });
     }
 
-    selectChat = (chatIndex) => {
-        this.setState({
+    selectChat = async (chatIndex) => {
+        await this.setState({
             selectedChat: chatIndex
         });
+        this.messageRead();
     }
 
     componentDidMount() {
@@ -79,6 +80,28 @@ class DashboardComponent extends React.Component {
                 recieverHasRead: false
             })
     }
+
+    clickedChatWhereNotSender = (chatIndex) => {
+        const _messages = this.state.chats[chatIndex].messages;
+        return _messages[_messages.length - 1].sender !== this.state.email;
+    }
+
+    messageRead = () => {
+        const docKey = this.buildDocKey(this.state.chats[this.state.selectedChat].users.filter(_user => _user !== this.state.email)[0]);
+        if(this.clickedChatWhereNotSender(this.state.selectedChat)) {
+            firebase
+                .firestore()
+                .collection('chats')
+                .doc(docKey)
+                .update({
+                    recieverHasRead: true
+                });
+        }
+        else {
+            console.log('clicked message where user is the sender');
+        }
+    }
+
     render() {
         const { classes } = this.props;
 
@@ -102,7 +125,7 @@ class DashboardComponent extends React.Component {
                 }
                 {
                     this.state.selectedChat !== null && !this.state.newChatFormVisible ?
-                    <ChatTextBoxComponent submitMessageFn={this.submitMessage}></ChatTextBoxComponent> :
+                    <ChatTextBoxComponent messageReadFn={this.messageRead} submitMessageFn={this.submitMessage}></ChatTextBoxComponent> :
                     null
                 }
                 <Button 

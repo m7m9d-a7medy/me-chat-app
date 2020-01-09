@@ -15,7 +15,7 @@ class ChatTextBoxComponent extends React.Component {
     messageValid = (text) => {
         return text && text.replace(/\s/g, '').length
     }
-    
+
     userTyping = (e) => {
         e.keyCode === 13 ?
         this.submitMessage() :
@@ -25,7 +25,7 @@ class ChatTextBoxComponent extends React.Component {
     }
 
     userClickedInput = () => {
-        console.log('user clicked input');
+        this.props.messageReadFn();
     }
 
     submitMessage = () => {
