@@ -2,6 +2,7 @@ import React from 'react';
 import ChatListComponent from '../chatList/chatList';
 import ChatViewComponent from '../chatView/chatView';
 import ChatTextBoxComponent from '../chatTextBox/chatTextBox';
+import NewChatComponent from '../newChat/newChat';
 import { Button, withStyles } from '@material-ui/core';
 import styles from './styles';
 const firebase = require('firebase');
@@ -26,7 +27,8 @@ class DashboardComponent extends React.Component {
 
     selectChat = async (chatIndex) => {
         await this.setState({
-            selectedChat: chatIndex
+            selectedChat: chatIndex,
+            newChatFormVisible: false
         });
         this.messageRead();
     }
@@ -102,6 +104,36 @@ class DashboardComponent extends React.Component {
         }
     }
 
+    goToChat = async (docKey, message) => {
+        const usersInChat = docKey.split(':');
+        const chat = this.state.chats.find(_chat => usersInChat.every(_user => _chat.users.includes(_user)));
+        this.setState({
+            newChatFormVisible: false
+        });
+        await this.selectChat(this.state.chats.indexOf(chat));
+        this.submitMessage(message);
+    }
+
+    newChatSubmit = async (chatObject) => {
+        const docKey = this.buildDocKey(chatObject.sendTo);
+        await firebase
+            .firestore()
+            .collection('chats')
+            .doc(docKey)
+            .set({
+                recieverHasRead: false,
+                users: [this.state.email, chatObject.sendTo],
+                messages: [{
+                    message: chatObject.message,
+                    sender: this.state.email
+                }]
+            });
+            this.setState({
+                newChatFormVisible: false
+            });
+            
+            this.selectChat(this.chats.length - 1);
+    }
     render() {
         const { classes } = this.props;
 
@@ -126,6 +158,12 @@ class DashboardComponent extends React.Component {
                 {
                     this.state.selectedChat !== null && !this.state.newChatFormVisible ?
                     <ChatTextBoxComponent messageReadFn={this.messageRead} submitMessageFn={this.submitMessage}></ChatTextBoxComponent> :
+                    null
+                }
+                {
+                    this.state.newChatFormVisible ?
+                    <NewChatComponent goToChatFn={this.goToChat}
+                        newChatSubmitFn={this.newChatSubmit}></NewChatComponent> : 
                     null
                 }
                 <Button 
